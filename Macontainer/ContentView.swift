@@ -129,6 +129,13 @@ import SwiftUI
             }
         }
     }
+    
+    func shutdown() {
+        if isSystemRunning {
+            print("Stopping container system before app shutdown...")
+            stopSystem()
+        }
+    }
 }
 
 struct ContentView: View {
@@ -211,6 +218,9 @@ struct ContentView: View {
         }
         .onChange(of: scenePhase) { _, newPhase in
             viewModel.setWindowActive(newPhase == .active)
+        }
+        .onReceive(NotificationCenter.default.publisher(for: NSApplication.willTerminateNotification)) { _ in
+            viewModel.shutdown()
         }
         .alert(viewModel.alertTitle, isPresented: $viewModel.shouldPresentAlert) {
                     Button("OK") {
