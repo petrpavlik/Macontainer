@@ -10,7 +10,7 @@ import SwiftUI
 @main
 struct MacontainerApp: App {
     var body: some Scene {
-        WindowGroup {
+        Window("Macontainer", id: "main") {
             ContentView()
         }
     }
