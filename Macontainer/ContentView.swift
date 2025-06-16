@@ -104,6 +104,7 @@ import SwiftUI
     func pruneImages() {
         alertTitle = "Images Pruned"
         alertMessage = runCommand(containerCommandPath, arguments: ["image", "prune"]) ?? ""
+        updateImages()
         shouldPresentAlert = true
     }
     
@@ -113,6 +114,20 @@ import SwiftUI
         if alertMessage.isEmpty {
             alertMessage = "All images have been deleted."
         }
+        updateImages()
+        shouldPresentAlert = true
+    }
+    
+    func deleteSelectedImages(_ selectedIds: Set<String>) {
+        alertTitle = selectedIds.count == 1 ? "Image Deleted" :  "\(selectedIds.count) Images Deleted"
+        alertMessage = ""
+        for imageId in selectedIds {
+            if let image = images.first(where: { $0.id == imageId }) {
+                alertMessage += runCommand(containerCommandPath, arguments: ["image", "delete", "\(image.name):\(image.tag)"]) ?? ""
+                alertMessage += "\n\n"
+            }
+        }
+        updateImages()
         shouldPresentAlert = true
     }
     
@@ -147,6 +162,7 @@ struct ContentView: View {
     
     @State private var viewModel = ViewModel()
     @State private var listItemSelection: ListItemSelection = .containers
+    @State private var selectedImageIds = Set<String>()
     @Environment(\.scenePhase) private var scenePhase
     
     var body: some View {
@@ -181,10 +197,22 @@ struct ContentView: View {
                             TableColumn("Address", value: \.addr)
                         }
                     case .images:
-                        Table(viewModel.images) {
+                        Table(viewModel.images, selection: $selectedImageIds) {
                             TableColumn("Name", value: \.name)
                             TableColumn("Tag", value: \.tag)
                             TableColumn("Digest", value:\.digest)
+                        }
+                        .onDeleteCommand {
+                            if !selectedImageIds.isEmpty {
+                                viewModel.deleteSelectedImages(selectedImageIds)
+                            }
+                        }
+                        .contextMenu {
+                            if (selectedImageIds.isEmpty == false) {
+                                Button(selectedImageIds.count > 1 ? "Delete (\(selectedImageIds.count))" : "Delete") {
+                                    viewModel.deleteSelectedImages(selectedImageIds)
+                                }
+                            }
                         }
                     }
                     
