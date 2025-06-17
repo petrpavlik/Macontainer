@@ -10,13 +10,53 @@ jobs:
     runs-on: macos-latest
     
     steps:
-    - name: Checkout code
-      uses: actions/checkout@v4
-      
-    - name: Setup Xcode
-      uses: maxim-lobanov/setup-xcode@v1
+    - uses: actions/checkout@v3
       with:
-        xcode-version: latest-stable
+        fetch-depth: 2
+    
+    - name: Check version change
+      id: version_check
+      run: |
+        # Get current version from Info.plist
+        CURRENT_VERSION=$(plutil -p Macontainer/Info.plist | grep CFBundleShortVersionString | cut -d'"' -f4)
+        
+        # Get previous version from last commit
+        git checkout HEAD~1 -- Macontainer/Info.plist 2>/dev/null || echo "No previous version"
+        PREVIOUS_VERSION=$(plutil -p Macontainer/Info.plist 2>/dev/null | grep CFBundleShortVersionString | cut -d'"' -f4 || echo "none")
+        
+        # Restore current Info.plist
+        git checkout HEAD -- Macontainer/Info.plist
+        
+        echo "current_version=$CURRENT_VERSION" >> $GITHUB_OUTPUT
+        echo "version_changed=$([ "$CURRENT_VERSION" != "$PREVIOUS_VERSION" ] && echo "true" || echo "false")" >> $GITHUB_OUTPUT
+        
+        echo "Current version: $CURRENT_VERSION"
+        echo "Previous version: $PREVIOUS_VERSION"
+    
+    - name: Build (verification only)
+      run: |
+        xcodebuild -scheme Macontainer \
+                   -configuration Release \
+                   build \
+                   CODE_SIGNING_REQUIRED=NO \
+                   CODE_SIGNING_ALLOWED=NO
+    
+    - name: Archive and Distribute
+      if: steps.version_check.outputs.version_changed == 'true'
+      run: |
+        echo "Version changed - creating archive for distribution..."
+        
+        xcodebuild -scheme Macontainer \
+                   -archivePath Macontainer.xcarchive \
+                   -configuration Release \
+                   archive \
+                   CODE_SIGNING_REQUIRED=NO \
+                   CODE_SIGNING_ALLOWED=NO
+    
+    - name: Skip archive message
+      if: steps.version_check.outputs.version_changed == 'false'
+      run: |
+        echo "Version unchanged - skipping archive step."
         
     - name: Create Export Options
       run: |
