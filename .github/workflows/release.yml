@@ -17,15 +17,15 @@ jobs:
     - name: Check version change
       id: version_check
       run: |
-        # Get current version from Info.plist
-        CURRENT_VERSION=$(plutil -p Macontainer/Info.plist | grep CFBundleShortVersionString | cut -d'"' -f4)
+        # Get current version from project.pbxproj
+        CURRENT_VERSION=$(grep -m 1 "MARKETING_VERSION" Macontainer.xcodeproj/project.pbxproj | sed 's/.*MARKETING_VERSION = \([^;]*\);.*/\1/' | tr -d ' ')
         
         # Get previous version from last commit
-        git checkout HEAD~1 -- Macontainer/Info.plist 2>/dev/null || echo "No previous version"
-        PREVIOUS_VERSION=$(plutil -p Macontainer/Info.plist 2>/dev/null | grep CFBundleShortVersionString | cut -d'"' -f4 || echo "none")
+        git checkout HEAD~1 -- Macontainer.xcodeproj/project.pbxproj 2>/dev/null || echo "No previous version"
+        PREVIOUS_VERSION=$(grep -m 1 "MARKETING_VERSION" Macontainer.xcodeproj/project.pbxproj 2>/dev/null | sed 's/.*MARKETING_VERSION = \([^;]*\);.*/\1/' | tr -d ' ' || echo "none")
         
-        # Restore current Info.plist
-        git checkout HEAD -- Macontainer/Info.plist
+        # Restore current project.pbxproj
+        git checkout HEAD -- Macontainer.xcodeproj/project.pbxproj
         
         echo "current_version=$CURRENT_VERSION" >> $GITHUB_OUTPUT
         echo "version_changed=$([ "$CURRENT_VERSION" != "$PREVIOUS_VERSION" ] && echo "true" || echo "false")" >> $GITHUB_OUTPUT
