@@ -32,7 +32,16 @@ import SwiftUI
         
         cliVersion = runCommand(containerCommandPath, arguments: ["--version"])?.trimmingCharacters(in: .whitespacesAndNewlines)
         updateImages()
+        updateContainers()
         updateSystemStatus()
+        
+        // Check if containers should be launched on app launch
+        if UserDefaults.standard.launchContainersOnAppLaunch {
+            // Start system (which will start containers)
+            if !isSystemRunning {
+                startSystem()
+            }
+        }
     }
     
     func setWindowActive(_ active: Bool) {
@@ -89,6 +98,24 @@ import SwiftUI
         }
     }
     
+    private func updateContainers() {
+        let output = runCommand(containerCommandPath, arguments: ["list", "--all"])
+        guard let output = output else { return }
+        
+        let lines = output.split(separator: "\n").dropFirst() // Skip header line
+        containers = lines.map { line in
+            let parts = line.split(separator: " ", maxSplits: 5, omittingEmptySubsequences: true)
+            return Container(
+                id: String(parts[0]),
+                image: String(parts[1]),
+                os: String(parts[2]),
+                arch: String(parts[3]),
+                state: String(parts[4]),
+                addr: parts.count > 5 ? String(parts[5]) : ""
+            )
+        }
+    }
+    
     func startSystem() {
         runCommand(containerCommandPath, arguments: ["system", "start"])
         // Update status immediately after attempting to start
@@ -118,6 +145,16 @@ import SwiftUI
         shouldPresentAlert = true
     }
     
+    func deleteAllContainers() {
+        alertTitle = "All Containers Deleted"
+        alertMessage = runCommand(containerCommandPath, arguments: ["delete", "--all"]) ?? ""
+        if alertMessage.isEmpty {
+            alertMessage = "All containers have been deleted."
+        }
+        updateContainers()
+        shouldPresentAlert = true
+    }
+    
     func deleteSelectedImages(_ selectedIds: Set<String>) {
         alertTitle = selectedIds.count == 1 ? "Image Deleted" :  "\(selectedIds.count) Images Deleted"
         alertMessage = ""
@@ -128,6 +165,50 @@ import SwiftUI
             }
         }
         updateImages()
+        shouldPresentAlert = true
+    }
+    
+    func deleteSelectedContainers(_ selectedIds: Set<String>) {
+        alertTitle = selectedIds.count == 1 ? "Container Deleted" : "\(selectedIds.count) Containers Deleted"
+        alertMessage = ""
+        for containerId in selectedIds {
+            alertMessage += runCommand(containerCommandPath, arguments: ["delete", containerId]) ?? ""
+            alertMessage += "\n\n"
+        }
+        updateContainers()
+        shouldPresentAlert = true
+    }
+    
+    func startSelectedContainers(_ selectedIds: Set<String>) {
+        alertTitle = selectedIds.count == 1 ? "Container Started" : "\(selectedIds.count) Containers Started"
+        alertMessage = ""
+        for containerId in selectedIds {
+            alertMessage += runCommand(containerCommandPath, arguments: ["start", containerId]) ?? ""
+            alertMessage += "\n\n"
+        }
+        updateContainers()
+        shouldPresentAlert = true
+    }
+    
+    func stopSelectedContainers(_ selectedIds: Set<String>) {
+        alertTitle = selectedIds.count == 1 ? "Container Stopped" : "\(selectedIds.count) Containers Stopped"
+        alertMessage = ""
+        for containerId in selectedIds {
+            alertMessage += runCommand(containerCommandPath, arguments: ["stop", containerId]) ?? ""
+            alertMessage += "\n\n"
+        }
+        updateContainers()
+        shouldPresentAlert = true
+    }
+    
+    func killSelectedContainers(_ selectedIds: Set<String>) {
+        alertTitle = selectedIds.count == 1 ? "Container Killed" : "\(selectedIds.count) Containers Killed"
+        alertMessage = ""
+        for containerId in selectedIds {
+            alertMessage += runCommand(containerCommandPath, arguments: ["kill", containerId]) ?? ""
+            alertMessage += "\n\n"
+        }
+        updateContainers()
         shouldPresentAlert = true
     }
     
@@ -146,9 +227,12 @@ import SwiftUI
     }
     
     func shutdown() {
-        if isSystemRunning {
-            print("Stopping container system before app shutdown...")
-            stopSystem()
+        // Check if containers should be quit on app quit
+        if UserDefaults.standard.quitContainersOnAppQuit {
+            if isSystemRunning {
+                print("Stopping container system before app shutdown...")
+                stopSystem()
+            }
         }
     }
 }
@@ -158,11 +242,13 @@ struct ContentView: View {
     enum ListItemSelection {
         case containers
         case images
+        case settings
     }
     
     @State private var viewModel = ViewModel()
     @State private var listItemSelection: ListItemSelection = .containers
     @State private var selectedImageIds = Set<String>()
+    @State private var selectedContainerIds = Set<String>()
     @Environment(\.scenePhase) private var scenePhase
     
     var body: some View {
@@ -171,6 +257,10 @@ struct ContentView: View {
                 List(selection: $listItemSelection) {
                     NavigationLink(value: ListItemSelection.containers) {
                         Label("Containers", systemImage: "shippingbox")
+                    }.contextMenu {
+                        Button("Delete all") {
+                            viewModel.deleteAllContainers()
+                        }
                     }
                     NavigationLink(value: ListItemSelection.images) {
                         Label("Images", systemImage: "opticaldisc")
@@ -182,19 +272,44 @@ struct ContentView: View {
                             viewModel.deleteAllImages()
                         }
                     }
+                    NavigationLink(value: ListItemSelection.settings) {
+                        Label("Settings", systemImage: "gearshape")
+                    }
                 }
                 .navigationTitle("Menu")
             } detail: {
                 VStack {
                     switch listItemSelection {
                     case .containers:
-                        Table(viewModel.containers) {
+                        Table(viewModel.containers, selection: $selectedContainerIds) {
                             TableColumn("ID", value: \.id)
                             TableColumn("Image", value: \.image)
                             TableColumn("OS", value: \.os)
                             TableColumn("Arch", value: \.arch)
                             TableColumn("State", value: \.state)
                             TableColumn("Address", value: \.addr)
+                        }
+                        .onDeleteCommand {
+                            if !selectedContainerIds.isEmpty {
+                                viewModel.deleteSelectedContainers(selectedContainerIds)
+                            }
+                        }
+                        .contextMenu {
+                            if !selectedContainerIds.isEmpty {
+                                Button(selectedContainerIds.count > 1 ? "Start (\(selectedContainerIds.count))" : "Start") {
+                                    viewModel.startSelectedContainers(selectedContainerIds)
+                                }
+                                Button(selectedContainerIds.count > 1 ? "Stop (\(selectedContainerIds.count))" : "Stop") {
+                                    viewModel.stopSelectedContainers(selectedContainerIds)
+                                }
+                                Button(selectedContainerIds.count > 1 ? "Kill (\(selectedContainerIds.count))" : "Kill") {
+                                    viewModel.killSelectedContainers(selectedContainerIds)
+                                }
+                                Divider()
+                                Button(selectedContainerIds.count > 1 ? "Delete (\(selectedContainerIds.count))" : "Delete") {
+                                    viewModel.deleteSelectedContainers(selectedContainerIds)
+                                }
+                            }
                         }
                     case .images:
                         Table(viewModel.images, selection: $selectedImageIds) {
@@ -214,6 +329,8 @@ struct ContentView: View {
                                 }
                             }
                         }
+                    case .settings:
+                        SettingsView()
                     }
                     
 //                    HStack {
