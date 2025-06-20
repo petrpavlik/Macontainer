@@ -103,21 +103,92 @@ jobs:
       run: |
         VERSION=$(/usr/libexec/PlistBuddy -c "Print CFBundleShortVersionString" ./build/export/Macontainer.app/Contents/Info.plist)
         echo "version=$VERSION" >> $GITHUB_OUTPUT
+    
+    - name: Generate Changelog
+      id: changelog
+      run: |
+        # Get the previous tag
+        PREVIOUS_TAG=$(git describe --tags --abbrev=0 HEAD~1 2>/dev/null || echo "")
+        CURRENT_VERSION="${{ steps.version.outputs.version }}"
+        
+        if [ -n "$PREVIOUS_TAG" ]; then
+          echo "Generating changelog from $PREVIOUS_TAG to HEAD"
+          
+          # Get commit messages since the last tag
+          COMMITS=$(git log --pretty=format:"- %s (%h)" $PREVIOUS_TAG..HEAD --no-merges)
+          
+          # Get commit count
+          COMMIT_COUNT=$(git rev-list --count $PREVIOUS_TAG..HEAD --no-merges)
+          
+          # Create changelog content
+          cat > changelog.md << 'EOL'
+        ## What's Changed
+        
+        This release includes $COMMIT_COUNT commits since $PREVIOUS_TAG:
+        
+        $COMMITS
+        
+        ## Installation
+        1. Download the DMG file below
+        2. Open the DMG and drag Macontainer to your Applications folder
+        3. Launch Macontainer from Applications
+        
+        **Full Changelog**: https://github.com/${{ github.repository }}/compare/$PREVIOUS_TAG...v$CURRENT_VERSION
+        EOL
+        else
+          echo "No previous tag found, creating initial release changelog"
+          COMMITS=$(git log --pretty=format:"- %s (%h)" --no-merges)
+          COMMIT_COUNT=$(git rev-list --count HEAD --no-merges)
+          
+          cat > changelog.md << 'EOL'
+        ## What's Changed
+        
+        This is the initial release of Macontainer with $COMMIT_COUNT commits:
+        
+        $COMMITS
+        
+        ## Installation
+        1. Download the DMG file below
+        2. Open the DMG and drag Macontainer to your Applications folder
+        3. Launch Macontainer from Applications
+        EOL
+        fi
+        
+        # Substitute variables in the changelog
+        sed -i "s|\$COMMIT_COUNT|$COMMIT_COUNT|g" changelog.md
+        sed -i "s|\$PREVIOUS_TAG|$PREVIOUS_TAG|g" changelog.md
+        sed -i "s|\$CURRENT_VERSION|$CURRENT_VERSION|g" changelog.md
+        
+        # Replace $COMMITS with actual commit list
+        # Use a temporary file to handle multiline replacement
+        echo "$COMMITS" > commits_temp.txt
+        awk '
+          /\$COMMITS/ {
+            while ((getline line < "commits_temp.txt") > 0)
+              print line
+            next
+          }
+          {print}
+        ' changelog.md > changelog_temp.md
+        mv changelog_temp.md changelog.md
+        rm -f commits_temp.txt
+        
+        # Save changelog content to output
+        {
+          echo 'changelog<<EOF'
+          cat changelog.md
+          echo 'EOF'
+        } >> $GITHUB_OUTPUT
+        
+        echo "Generated changelog:"
+        cat changelog.md
         
     - name: Create Release
       uses: softprops/action-gh-release@v1
       with:
         tag_name: v${{ steps.version.outputs.version }}
         name: Macontainer v${{ steps.version.outputs.version }}
-        body: |
-          ## What's Changed
-          - Auto-generated release from main branch
-          
-          ## Installation
-          1. Download the DMG file below
-          2. Open the DMG and drag Macontainer to your Applications folder
-          3. Launch Macontainer from Applications
-          
+        body: ${{ steps.changelog.outputs.changelog }}
         files: |
           ./build/Macontainer.dmg
         draft: false
