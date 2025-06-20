@@ -14,7 +14,7 @@ import SwiftUI
     private(set) var hasNewerVersion: Bool = false
     @ObservationIgnored private var isWindowActive: Bool = false
     @ObservationIgnored private var updateTimer: Timer?
-    @ObservationIgnored private var containerCommandPath: String = ""
+    @ObservationIgnored private var containerCommandPath: String = "/usr/local/bin/container"
     
     private(set) var containers: [Container] = []
     private(set) var images: [Image] = []
@@ -26,6 +26,7 @@ import SwiftUI
     
     init() {
         // Find the actual path of the container command
+        // FIXME: This does not work, at least on my machine.
         if let path = runCommand("/usr/bin/which", arguments: ["container"])?.trimmingCharacters(in: .whitespacesAndNewlines), !path.isEmpty {
             containerCommandPath = path
         }
