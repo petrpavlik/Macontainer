@@ -14,7 +14,7 @@ import SwiftUI
     private(set) var hasNewerVersion: Bool = false
     @ObservationIgnored private var isWindowActive: Bool = false
     @ObservationIgnored private var updateTimer: Timer?
-    @ObservationIgnored private let containerCommandPath: String = "/usr/local/bin/container"
+    @ObservationIgnored private var containerCommandPath: String = ""
     
     private(set) var containers: [Container] = []
     private(set) var images: [Image] = []
