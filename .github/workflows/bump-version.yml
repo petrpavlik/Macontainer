@@ -105,6 +105,18 @@ jobs:
         
         echo "Created and pushed tag v$NEW_VERSION"
     
+    - name: Trigger Release Workflow
+      run: |
+        curl -L \
+          -X POST \
+          -H "Accept: application/vnd.github+json" \
+          -H "Authorization: Bearer ${{ secrets.GITHUB_TOKEN }}" \
+          -H "X-GitHub-Api-Version: 2022-11-28" \
+          https://api.github.com/repos/${{ github.repository }}/actions/workflows/release.yml/dispatches \
+          -d '{"ref":"main"}'
+        
+        echo "Triggered release workflow"
+    
     - name: Summary
       run: |
         echo "✅ Version bump completed successfully!"
@@ -112,3 +124,4 @@ jobs:
         echo "   New version: ${{ steps.new_version.outputs.new_version }}"
         echo "   Changes have been pushed to main branch"
         echo "   Tag v${{ steps.new_version.outputs.new_version }} has been created"
+        echo "   Release workflow has been triggered"
