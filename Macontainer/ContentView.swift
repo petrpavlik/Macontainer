@@ -14,7 +14,7 @@ import SwiftUI
     private(set) var hasNewerVersion: Bool = false
     @ObservationIgnored private var isWindowActive: Bool = false
     @ObservationIgnored private var updateTimer: Timer?
-    @ObservationIgnored private var containerCommandPath: String = "/usr/local/bin/container"
+    @ObservationIgnored private let containerCommandPath: String = "/usr/local/bin/container"
     
     private(set) var containers: [Container] = []
     private(set) var images: [Image] = []
@@ -332,16 +332,12 @@ struct ContentView: View {
                     case .settings:
                         SettingsView()
                     }
-                    
-//                    HStack {
-//                        Text("✅ CLI is up to date")
-//                    }
                 }
             }
             .toolbar {
                 HStack {
                     Text(viewModel.cliVersion ?? "Unknown version")
-                        .foregroundColor(.secondary)
+                        .foregroundColor(viewModel.hasNewerVersion ? .orange : .secondary)
                     Button(action: {
                         if viewModel.isSystemRunning {
                             viewModel.stopSystem()
