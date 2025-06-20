@@ -1,0 +1,114 @@
+name: Bump Version
+
+on:
+  workflow_dispatch:
+    inputs:
+      version_type:
+        description: 'Version type to bump'
+        required: true
+        default: 'minor'
+        type: choice
+        options:
+        - minor
+        - patch
+
+jobs:
+  bump-version:
+    runs-on: macos-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      with:
+        token: ${{ secrets.GITHUB_TOKEN }}
+        fetch-depth: 0
+    
+    - name: Setup Git
+      run: |
+        git config --local user.email "action@github.com"
+        git config --local user.name "GitHub Action"
+    
+    - name: Get current version
+      id: current_version
+      run: |
+        CURRENT_VERSION=$(grep -m 1 "MARKETING_VERSION" Macontainer.xcodeproj/project.pbxproj | sed 's/.*MARKETING_VERSION = \([^;]*\);.*/\1/' | tr -d ' ')
+        echo "current_version=$CURRENT_VERSION" >> $GITHUB_OUTPUT
+        echo "Current version: $CURRENT_VERSION"
+    
+    - name: Calculate new version
+      id: new_version
+      run: |
+        CURRENT_VERSION="${{ steps.current_version.outputs.current_version }}"
+        VERSION_TYPE="${{ github.event.inputs.version_type }}"
+        
+        # Split version into parts (assuming semantic versioning: MAJOR.MINOR.PATCH)
+        IFS='.' read -ra VERSION_PARTS <<< "$CURRENT_VERSION"
+        MAJOR=${VERSION_PARTS[0]}
+        MINOR=${VERSION_PARTS[1]}
+        PATCH=${VERSION_PARTS[2]:-0}
+        
+        if [ "$VERSION_TYPE" = "minor" ]; then
+          MINOR=$((MINOR + 1))
+          PATCH=0
+        elif [ "$VERSION_TYPE" = "patch" ]; then
+          PATCH=$((PATCH + 1))
+        fi
+        
+        NEW_VERSION="$MAJOR.$MINOR.$PATCH"
+        echo "new_version=$NEW_VERSION" >> $GITHUB_OUTPUT
+        echo "New version: $NEW_VERSION"
+    
+    - name: Update version in project.pbxproj
+      run: |
+        NEW_VERSION="${{ steps.new_version.outputs.new_version }}"
+        
+        # Update MARKETING_VERSION in project.pbxproj
+        sed -i '' "s/MARKETING_VERSION = [^;]*/MARKETING_VERSION = $NEW_VERSION/" Macontainer.xcodeproj/project.pbxproj
+        
+        # Get current CURRENT_PROJECT_VERSION and increment it
+        CURRENT_BUILD_VERSION=$(grep -m 1 "CURRENT_PROJECT_VERSION" Macontainer.xcodeproj/project.pbxproj | sed 's/.*CURRENT_PROJECT_VERSION = \([^;]*\);.*/\1/' | tr -d ' ')
+        NEW_BUILD_VERSION=$((CURRENT_BUILD_VERSION + 1))
+        
+        # Update CURRENT_PROJECT_VERSION in project.pbxproj
+        sed -i '' "s/CURRENT_PROJECT_VERSION = [^;]*/CURRENT_PROJECT_VERSION = $NEW_BUILD_VERSION/" Macontainer.xcodeproj/project.pbxproj
+        
+        echo "Updated MARKETING_VERSION to $NEW_VERSION and CURRENT_PROJECT_VERSION to $NEW_BUILD_VERSION in project.pbxproj"
+    
+    - name: Update version in Info.plist (if exists)
+      run: |
+        NEW_VERSION="${{ steps.new_version.outputs.new_version }}"
+        
+        # Check if Info.plist exists and update it
+        if [ -f "Macontainer/Info.plist" ]; then
+          /usr/libexec/PlistBuddy -c "Set :CFBundleShortVersionString $NEW_VERSION" Macontainer/Info.plist
+          echo "Updated version in Info.plist"
+        else
+          echo "Info.plist not found, skipping"
+        fi
+    
+    - name: Commit and push changes
+      run: |
+        NEW_VERSION="${{ steps.new_version.outputs.new_version }}"
+        
+        git add .
+        git commit -m "Bump version to $NEW_VERSION"
+        git push origin main
+        
+        echo "Changes committed and pushed to main"
+    
+    - name: Create git tag
+      run: |
+        NEW_VERSION="${{ steps.new_version.outputs.new_version }}"
+        
+        git tag "v$NEW_VERSION"
+        git push origin "v$NEW_VERSION"
+        
+        echo "Created and pushed tag v$NEW_VERSION"
+    
+    - name: Summary
+      run: |
+        echo "✅ Version bump completed successfully!"
+        echo "   Previous version: ${{ steps.current_version.outputs.current_version }}"
+        echo "   New version: ${{ steps.new_version.outputs.new_version }}"
+        echo "   Changes have been pushed to main branch"
+        echo "   Tag v${{ steps.new_version.outputs.new_version }} has been created"
