@@ -15,7 +15,7 @@ jobs:
         xcode-version: latest-stable
     - uses: actions/checkout@v3
       with:
-        fetch-depth: 2
+        fetch-depth: 0  # Fetch full history including all tags
     
     - name: Check version change
       id: version_check
@@ -120,32 +120,33 @@ jobs:
           # Get commit count
           COMMIT_COUNT=$(git rev-list --count $PREVIOUS_TAG..HEAD --no-merges)
           
-          # Create changelog content
-          cat > changelog.md << 'EOL'
+          # Create changelog content with variable substitution
+          cat > changelog.md << EOL
         ## What's Changed
         
-        This release includes $COMMIT_COUNT commits since $PREVIOUS_TAG:
+        This release includes ${COMMIT_COUNT} commits since ${PREVIOUS_TAG}:
         
-        $COMMITS
+        ${COMMITS}
         
         ## Installation
         1. Download the DMG file below
         2. Open the DMG and drag Macontainer to your Applications folder
         3. Launch Macontainer from Applications
         
-        **Full Changelog**: https://github.com/${{ github.repository }}/compare/$PREVIOUS_TAG...v$CURRENT_VERSION
+        **Full Changelog**: https://github.com/${{ github.repository }}/compare/${PREVIOUS_TAG}...v${CURRENT_VERSION}
         EOL
         else
           echo "No previous tag found, creating initial release changelog"
           COMMITS=$(git log --pretty=format:"- %s (%h)" --no-merges)
           COMMIT_COUNT=$(git rev-list --count HEAD --no-merges)
           
-          cat > changelog.md << 'EOL'
+          # Create changelog content with variable substitution
+          cat > changelog.md << EOL
         ## What's Changed
         
-        This is the initial release of Macontainer with $COMMIT_COUNT commits:
+        This is the initial release of Macontainer with ${COMMIT_COUNT} commits:
         
-        $COMMITS
+        ${COMMITS}
         
         ## Installation
         1. Download the DMG file below
@@ -153,25 +154,6 @@ jobs:
         3. Launch Macontainer from Applications
         EOL
         fi
-        
-        # Substitute variables in the changelog
-        sed -i "s|\$COMMIT_COUNT|$COMMIT_COUNT|g" changelog.md
-        sed -i "s|\$PREVIOUS_TAG|$PREVIOUS_TAG|g" changelog.md
-        sed -i "s|\$CURRENT_VERSION|$CURRENT_VERSION|g" changelog.md
-        
-        # Replace $COMMITS with actual commit list
-        # Use a temporary file to handle multiline replacement
-        echo "$COMMITS" > commits_temp.txt
-        awk '
-          /\$COMMITS/ {
-            while ((getline line < "commits_temp.txt") > 0)
-              print line
-            next
-          }
-          {print}
-        ' changelog.md > changelog_temp.md
-        mv changelog_temp.md changelog.md
-        rm -f commits_temp.txt
         
         # Save changelog content to output
         {
