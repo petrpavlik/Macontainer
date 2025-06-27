@@ -61,9 +61,11 @@ import SwiftUI
     
     private func startPeriodicUpdates() {
         stopPeriodicUpdates() // Ensure we don't have multiple timers
-        updateTimer = Timer.scheduledTimer(withTimeInterval: 5.0, repeats: true) { _ in
-            DispatchQueue.main.async {
+        updateTimer = Timer.scheduledTimer(withTimeInterval: 5.0, repeats: true) { [weak self] _ in
+            DispatchQueue.main.async { [weak self] in
+                guard let self else { return }
                 self.updateImages()
+                self.updateContainers()
                 self.updateSystemStatus()
             }
         }
