@@ -36,3 +36,4 @@ A native desktop macOS app that provides graphical interface for [Apple's Contai
 
 ## Known Issues
 - First launch of the CLI may require user input and hang the app when pressing the start button.
+- Stopping the syste with running containers may cause the CLI to hang. Waiting for Apple to fix this.
