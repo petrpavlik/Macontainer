@@ -1,4 +1,8 @@
 {
     "git.rebaseWhenSync": true,
-    "git.pullBeforePublish": true
+    "editor.formatOnSave": true,
+    "[swift]": {
+        "editor.formatOnSave": true,
+        "editor.defaultFormatter": "swiftlang.swift-vscode"
+    }
 }
