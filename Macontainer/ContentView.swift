@@ -35,9 +35,9 @@ import SwiftUI
 
         cliVersion = runCommand(containerCommandPath, arguments: ["--version"])?.trimmingCharacters(
             in: .whitespacesAndNewlines)
+        updateSystemStatus()
         updateImages()
         updateContainers()
-        updateSystemStatus()
 
         // Check if containers should be launched on app launch
         if UserDefaults.standard.launchContainersOnAppLaunch {
@@ -80,6 +80,7 @@ import SwiftUI
     }
 
     private func checkSystemRunning() -> Bool {
+
         let output = runCommand(containerCommandPath, arguments: ["list"])
         guard let output = output else { return false }
         if output.contains("XPC connection error") {
@@ -94,6 +95,12 @@ import SwiftUI
     }
 
     private func updateImages() {
+
+        guard isSystemRunning else {
+            images = []
+            return
+        }
+
         let output = runCommand(containerCommandPath, arguments: ["images", "list"])
         guard let output = output else { return }
 
@@ -105,6 +112,12 @@ import SwiftUI
     }
 
     private func updateContainers() {
+
+        guard isSystemRunning else {
+            containers = []
+            return
+        }
+
         let output = runCommand(containerCommandPath, arguments: ["list", "--all"])
         guard let output = output else { return }
 

@@ -6,11 +6,27 @@
 	objectVersion = 77;
 	objects = {
 
+/* Begin PBXContainerItemProxy section */
+		EF55CB432E1013EC0094A6E6 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = EFE33E272DF9D76E00346DE4 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = EFE33E2E2DF9D76E00346DE4;
+			remoteInfo = Macontainer;
+		};
+/* End PBXContainerItemProxy section */
+
 /* Begin PBXFileReference section */
+		EF55CB3F2E1013EC0094A6E6 /* MacontainerTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = MacontainerTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		EFE33E2F2DF9D76E00346DE4 /* Macontainer.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Macontainer.app; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
+		EF55CB402E1013EC0094A6E6 /* MacontainerTests */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			path = MacontainerTests;
+			sourceTree = "<group>";
+		};
 		EFE33E312DF9D76E00346DE4 /* Macontainer */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
 			path = Macontainer;
@@ -19,6 +35,13 @@
 /* End PBXFileSystemSynchronizedRootGroup section */
 
 /* Begin PBXFrameworksBuildPhase section */
+		EF55CB3C2E1013EC0094A6E6 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 		EFE33E2C2DF9D76E00346DE4 /* Frameworks */ = {
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
@@ -33,6 +56,7 @@
 			isa = PBXGroup;
 			children = (
 				EFE33E312DF9D76E00346DE4 /* Macontainer */,
+				EF55CB402E1013EC0094A6E6 /* MacontainerTests */,
 				EFE33E302DF9D76E00346DE4 /* Products */,
 			);
 			sourceTree = "<group>";
@@ -41,6 +65,7 @@
 			isa = PBXGroup;
 			children = (
 				EFE33E2F2DF9D76E00346DE4 /* Macontainer.app */,
+				EF55CB3F2E1013EC0094A6E6 /* MacontainerTests.xctest */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -48,6 +73,29 @@
 /* End PBXGroup section */
 
 /* Begin PBXNativeTarget section */
+		EF55CB3E2E1013EC0094A6E6 /* MacontainerTests */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = EF55CB452E1013EC0094A6E6 /* Build configuration list for PBXNativeTarget "MacontainerTests" */;
+			buildPhases = (
+				EF55CB3B2E1013EC0094A6E6 /* Sources */,
+				EF55CB3C2E1013EC0094A6E6 /* Frameworks */,
+				EF55CB3D2E1013EC0094A6E6 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				EF55CB442E1013EC0094A6E6 /* PBXTargetDependency */,
+			);
+			fileSystemSynchronizedGroups = (
+				EF55CB402E1013EC0094A6E6 /* MacontainerTests */,
+			);
+			name = MacontainerTests;
+			packageProductDependencies = (
+			);
+			productName = MacontainerTests;
+			productReference = EF55CB3F2E1013EC0094A6E6 /* MacontainerTests.xctest */;
+			productType = "com.apple.product-type.bundle.unit-test";
+		};
 		EFE33E2E2DF9D76E00346DE4 /* Macontainer */ = {
 			isa = PBXNativeTarget;
 			buildConfigurationList = EFE33E3B2DF9D77000346DE4 /* Build configuration list for PBXNativeTarget "Macontainer" */;
@@ -80,6 +128,10 @@
 				LastSwiftUpdateCheck = 1640;
 				LastUpgradeCheck = 1640;
 				TargetAttributes = {
+					EF55CB3E2E1013EC0094A6E6 = {
+						CreatedOnToolsVersion = 16.4;
+						TestTargetID = EFE33E2E2DF9D76E00346DE4;
+					};
 					EFE33E2E2DF9D76E00346DE4 = {
 						CreatedOnToolsVersion = 16.4;
 					};
@@ -100,11 +152,19 @@
 			projectRoot = "";
 			targets = (
 				EFE33E2E2DF9D76E00346DE4 /* Macontainer */,
+				EF55CB3E2E1013EC0094A6E6 /* MacontainerTests */,
 			);
 		};
 /* End PBXProject section */
 
 /* Begin PBXResourcesBuildPhase section */
+		EF55CB3D2E1013EC0094A6E6 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 		EFE33E2D2DF9D76E00346DE4 /* Resources */ = {
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
@@ -115,6 +175,13 @@
 /* End PBXResourcesBuildPhase section */
 
 /* Begin PBXSourcesBuildPhase section */
+		EF55CB3B2E1013EC0094A6E6 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 		EFE33E2B2DF9D76E00346DE4 /* Sources */ = {
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
@@ -124,7 +191,51 @@
 		};
 /* End PBXSourcesBuildPhase section */
 
+/* Begin PBXTargetDependency section */
+		EF55CB442E1013EC0094A6E6 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = EFE33E2E2DF9D76E00346DE4 /* Macontainer */;
+			targetProxy = EF55CB432E1013EC0094A6E6 /* PBXContainerItemProxy */;
+		};
+/* End PBXTargetDependency section */
+
 /* Begin XCBuildConfiguration section */
+		EF55CB462E1013EC0094A6E6 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = JL8TC3L46B;
+				GENERATE_INFOPLIST_FILE = YES;
+				MACOSX_DEPLOYMENT_TARGET = 15.0;
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.macontainer.MacontainerTests;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_EMIT_LOC_STRINGS = NO;
+				SWIFT_VERSION = 5.0;
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/Macontainer.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/Macontainer";
+			};
+			name = Debug;
+		};
+		EF55CB472E1013EC0094A6E6 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = JL8TC3L46B;
+				GENERATE_INFOPLIST_FILE = YES;
+				MACOSX_DEPLOYMENT_TARGET = 15.0;
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.macontainer.MacontainerTests;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_EMIT_LOC_STRINGS = NO;
+				SWIFT_VERSION = 5.0;
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/Macontainer.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/Macontainer";
+			};
+			name = Release;
+		};
 		EFE33E392DF9D77000346DE4 /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
@@ -306,6 +417,15 @@
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
+		EF55CB452E1013EC0094A6E6 /* Build configuration list for PBXNativeTarget "MacontainerTests" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				EF55CB462E1013EC0094A6E6 /* Debug */,
+				EF55CB472E1013EC0094A6E6 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
 		EFE33E2A2DF9D76E00346DE4 /* Build configuration list for PBXProject "Macontainer" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
