@@ -2,7 +2,7 @@
 
 A native desktop macOS app that provides graphical interface for [Apple's Container CLI](https://github.com/apple/container).
 
-<img width="1068" alt="Screenshot 2025-06-11 at 22 56 34" src="https://github.com/user-attachments/assets/8b2c2336-b579-411f-9de5-c2f2f5db4ad5" />
+<img width="1081" alt="Screenshot 2025-06-28 at 11 46 28" src="https://github.com/user-attachments/assets/f2a43e3b-e5aa-4b05-a50e-51272ee642b8" />
 
 ## Features
 
