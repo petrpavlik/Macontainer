@@ -143,4 +143,18 @@ extension String {
     func isVersionEqual(_ other: String) -> Bool {
         return SemverComparator.isEqual(self, other)
     }
+
+    /// Checks if this version string is greater than or equal to the specified version
+    /// - Parameter other: Version to compare against
+    /// - Returns: True if this version >= other version
+    func isVersionGreaterThanOrEqual(_ other: String) -> Bool {
+        return SemverComparator.isGreaterThanOrEqual(self, other)
+    }
+
+    /// Checks if this version string is less than or equal to the specified version
+    /// - Parameter other: Version to compare against
+    /// - Returns: True if this version <= other version
+    func isVersionLessThanOrEqual(_ other: String) -> Bool {
+        return SemverComparator.isLessThanOrEqual(self, other)
+    }
 }

@@ -80,13 +80,21 @@ import SwiftUI
     }
 
     private func checkSystemRunning() -> Bool {
-
-        let output = runCommand(containerCommandPath, arguments: ["list"])
-        guard let output = output else { return false }
-        if output.contains("XPC connection error") {
-            return false
+        // Check if CLI version is >= 0.2 to use the new command
+        if let version = cliVersion, version.isVersionGreaterThanOrEqual("0.2") {
+            let output = runCommand(containerCommandPath, arguments: ["system", "status"])
+            guard let output = output else { return false }
+            return !output.contains("not running")
         } else {
-            return true
+            // Use legacy method for older versions
+            // TODO: Remove this when we drop support for versions < 0.2
+            let output = runCommand(containerCommandPath, arguments: ["list"])
+            guard let output = output else { return false }
+            if output.contains("XPC connection error") {
+                return false
+            } else {
+                return true
+            }
         }
     }
 

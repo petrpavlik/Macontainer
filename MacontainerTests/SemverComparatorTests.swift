@@ -144,6 +144,22 @@ struct SemverComparatorTests {
         #expect(!"1.0.0".isVersionEqual("1.0.1"))
     }
 
+    @Test("String extension greater than or equal")
+    func stringExtensionGreaterThanOrEqual() {
+        #expect("1.0.0".isVersionGreaterThanOrEqual("0.9.9"))
+        #expect("1.0.0".isVersionGreaterThanOrEqual("1.0.0"))
+        #expect("0.3.0".isVersionGreaterThanOrEqual("0.2.0"))
+        #expect(!"0.1.0".isVersionGreaterThanOrEqual("0.2.0"))
+    }
+
+    @Test("String extension less than or equal")
+    func stringExtensionLessThanOrEqual() {
+        #expect("0.9.9".isVersionLessThanOrEqual("1.0.0"))
+        #expect("1.0.0".isVersionLessThanOrEqual("1.0.0"))
+        #expect("0.1.0".isVersionLessThanOrEqual("0.2.0"))
+        #expect(!"0.3.0".isVersionLessThanOrEqual("0.2.0"))
+    }
+
     // MARK: - Comparison Result Tests
 
     @Test("Compare function results")
