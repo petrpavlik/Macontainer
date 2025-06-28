@@ -1,0 +1,4 @@
+{
+    "git.rebaseWhenSync": true,
+    "git.pullBeforePublish": true
+}
