@@ -8,34 +8,37 @@
 import SwiftUI
 
 @Observable @MainActor final class ViewModel {
-    
+
     private(set) var cliVersion: String?
     private(set) var latestVersion: String?
     private(set) var hasNewerVersion: Bool = false
     @ObservationIgnored private var isWindowActive: Bool = false
     @ObservationIgnored private var updateTimer: Timer?
     @ObservationIgnored private var containerCommandPath: String = "/usr/local/bin/container"
-    
+
     private(set) var containers: [Container] = []
     private(set) var images: [Image] = []
     private(set) var isSystemRunning: Bool = false
-    
+
     var shouldPresentAlert = false
     @ObservationIgnored private(set) var alertMessage = ""
     @ObservationIgnored private(set) var alertTitle = ""
-    
+
     init() {
         // Find the actual path of the container command
         // FIXME: This does not work, at least on my machine.
-        if let path = runCommand("/usr/bin/which", arguments: ["container"])?.trimmingCharacters(in: .whitespacesAndNewlines), !path.isEmpty {
+        if let path = runCommand("/usr/bin/which", arguments: ["container"])?.trimmingCharacters(
+            in: .whitespacesAndNewlines), !path.isEmpty
+        {
             containerCommandPath = path
         }
-        
-        cliVersion = runCommand(containerCommandPath, arguments: ["--version"])?.trimmingCharacters(in: .whitespacesAndNewlines)
+
+        cliVersion = runCommand(containerCommandPath, arguments: ["--version"])?.trimmingCharacters(
+            in: .whitespacesAndNewlines)
         updateImages()
         updateContainers()
         updateSystemStatus()
-        
+
         // Check if containers should be launched on app launch
         if UserDefaults.standard.launchContainersOnAppLaunch {
             // Start system (which will start containers)
@@ -44,10 +47,10 @@ import SwiftUI
             }
         }
     }
-    
+
     func setWindowActive(_ active: Bool) {
         isWindowActive = active
-        
+
         if active {
             // Start periodic updates when window becomes active
             startPeriodicUpdates()
@@ -58,9 +61,9 @@ import SwiftUI
             stopPeriodicUpdates()
         }
     }
-    
+
     private func startPeriodicUpdates() {
-        stopPeriodicUpdates() // Ensure we don't have multiple timers
+        stopPeriodicUpdates()  // Ensure we don't have multiple timers
         updateTimer = Timer.scheduledTimer(withTimeInterval: 5.0, repeats: true) { [weak self] _ in
             DispatchQueue.main.async { [weak self] in
                 guard let self else { return }
@@ -70,12 +73,12 @@ import SwiftUI
             }
         }
     }
-    
+
     private func stopPeriodicUpdates() {
         updateTimer?.invalidate()
         updateTimer = nil
     }
-    
+
     private func checkSystemRunning() -> Bool {
         let output = runCommand(containerCommandPath, arguments: ["list"])
         guard let output = output else { return false }
@@ -85,27 +88,27 @@ import SwiftUI
             return true
         }
     }
-    
+
     private func updateSystemStatus() {
         isSystemRunning = checkSystemRunning()
     }
-    
+
     private func updateImages() {
         let output = runCommand(containerCommandPath, arguments: ["images", "list"])
         guard let output = output else { return }
-        
-        let lines = output.split(separator: "\n").dropFirst() // Skip header line
+
+        let lines = output.split(separator: "\n").dropFirst()  // Skip header line
         images = lines.map { line in
             let parts = line.split(separator: " ")
             return Image(name: String(parts[0]), tag: String(parts[1]), digest: String(parts[2]))
         }
     }
-    
+
     private func updateContainers() {
         let output = runCommand(containerCommandPath, arguments: ["list", "--all"])
         guard let output = output else { return }
-        
-        let lines = output.split(separator: "\n").dropFirst() // Skip header line
+
+        let lines = output.split(separator: "\n").dropFirst()  // Skip header line
         containers = lines.map { line in
             let parts = line.split(separator: " ", maxSplits: 5, omittingEmptySubsequences: true)
             return Container(
@@ -118,36 +121,37 @@ import SwiftUI
             )
         }
     }
-    
+
     func startSystem() {
         runCommand(containerCommandPath, arguments: ["system", "start"])
         // Update status immediately after attempting to start
         updateSystemStatus()
     }
-    
+
     func stopSystem() {
         runCommand(containerCommandPath, arguments: ["system", "stop"])
         // Update status immediately after attempting to stop
         updateSystemStatus()
     }
-    
+
     func pruneImages() {
         alertTitle = "Images Pruned"
         alertMessage = runCommand(containerCommandPath, arguments: ["image", "prune"]) ?? ""
         updateImages()
         shouldPresentAlert = true
     }
-    
+
     func deleteAllImages() {
         alertTitle = "All Images Deleted"
-        alertMessage = runCommand(containerCommandPath, arguments: ["image", "delete", "--all"]) ?? ""
+        alertMessage =
+            runCommand(containerCommandPath, arguments: ["image", "delete", "--all"]) ?? ""
         if alertMessage.isEmpty {
             alertMessage = "All images have been deleted."
         }
         updateImages()
         shouldPresentAlert = true
     }
-    
+
     func deleteAllContainers() {
         alertTitle = "All Containers Deleted"
         alertMessage = runCommand(containerCommandPath, arguments: ["delete", "--all"]) ?? ""
@@ -157,70 +161,83 @@ import SwiftUI
         updateContainers()
         shouldPresentAlert = true
     }
-    
+
     func deleteSelectedImages(_ selectedIds: Set<String>) {
-        alertTitle = selectedIds.count == 1 ? "Image Deleted" :  "\(selectedIds.count) Images Deleted"
+        alertTitle =
+            selectedIds.count == 1 ? "Image Deleted" : "\(selectedIds.count) Images Deleted"
         alertMessage = ""
         for imageId in selectedIds {
             if let image = images.first(where: { $0.id == imageId }) {
-                alertMessage += runCommand(containerCommandPath, arguments: ["image", "delete", "\(image.name):\(image.tag)"]) ?? ""
+                alertMessage +=
+                    runCommand(
+                        containerCommandPath,
+                        arguments: ["image", "delete", "\(image.name):\(image.tag)"]) ?? ""
                 alertMessage += "\n\n"
             }
         }
         updateImages()
         shouldPresentAlert = true
     }
-    
+
     func deleteSelectedContainers(_ selectedIds: Set<String>) {
-        alertTitle = selectedIds.count == 1 ? "Container Deleted" : "\(selectedIds.count) Containers Deleted"
+        alertTitle =
+            selectedIds.count == 1 ? "Container Deleted" : "\(selectedIds.count) Containers Deleted"
         alertMessage = ""
         for containerId in selectedIds {
-            alertMessage += runCommand(containerCommandPath, arguments: ["delete", containerId]) ?? ""
+            alertMessage +=
+                runCommand(containerCommandPath, arguments: ["delete", containerId]) ?? ""
             alertMessage += "\n\n"
         }
         updateContainers()
         shouldPresentAlert = true
     }
-    
+
     func startSelectedContainers(_ selectedIds: Set<String>) {
-        alertTitle = selectedIds.count == 1 ? "Container Started" : "\(selectedIds.count) Containers Started"
+        alertTitle =
+            selectedIds.count == 1 ? "Container Started" : "\(selectedIds.count) Containers Started"
         alertMessage = ""
         for containerId in selectedIds {
-            alertMessage += runCommand(containerCommandPath, arguments: ["start", containerId]) ?? ""
+            alertMessage +=
+                runCommand(containerCommandPath, arguments: ["start", containerId]) ?? ""
             alertMessage += "\n\n"
         }
         updateContainers()
         shouldPresentAlert = true
     }
-    
+
     func stopSelectedContainers(_ selectedIds: Set<String>) {
-        alertTitle = selectedIds.count == 1 ? "Container Stopped" : "\(selectedIds.count) Containers Stopped"
+        alertTitle =
+            selectedIds.count == 1 ? "Container Stopped" : "\(selectedIds.count) Containers Stopped"
         alertMessage = ""
         for containerId in selectedIds {
-            alertMessage += runCommand(containerCommandPath, arguments: ["stop", containerId]) ?? ""
+            alertMessage +=
+                runCommand(containerCommandPath, arguments: ["stop", containerId]) ?? ""
             alertMessage += "\n\n"
         }
         updateContainers()
         shouldPresentAlert = true
     }
-    
+
     func killSelectedContainers(_ selectedIds: Set<String>) {
-        alertTitle = selectedIds.count == 1 ? "Container Killed" : "\(selectedIds.count) Containers Killed"
+        alertTitle =
+            selectedIds.count == 1 ? "Container Killed" : "\(selectedIds.count) Containers Killed"
         alertMessage = ""
         for containerId in selectedIds {
-            alertMessage += runCommand(containerCommandPath, arguments: ["kill", containerId]) ?? ""
+            alertMessage +=
+                runCommand(containerCommandPath, arguments: ["kill", containerId]) ?? ""
             alertMessage += "\n\n"
         }
         updateContainers()
         shouldPresentAlert = true
     }
-    
+
     private func checkForUpdates() {
         guard let currentVersion = cliVersion else { return }
-        
+
         Task {
             do {
-                let result = try await VersionChecker.checkForUpdates(currentVersion: currentVersion)
+                let result = try await VersionChecker.checkForUpdates(
+                    currentVersion: currentVersion)
                 self.latestVersion = result.latestVersion
                 self.hasNewerVersion = result.hasNewerVersion
             } catch {
@@ -228,7 +245,7 @@ import SwiftUI
             }
         }
     }
-    
+
     func shutdown() {
         // Check if containers should be quit on app quit
         if UserDefaults.standard.quitContainersOnAppQuit {
@@ -241,19 +258,19 @@ import SwiftUI
 }
 
 struct ContentView: View {
-    
+
     enum ListItemSelection {
         case containers
         case images
         case settings
     }
-    
+
     @State private var viewModel = ViewModel()
     @State private var listItemSelection: ListItemSelection = .containers
     @State private var selectedImageIds = Set<String>()
     @State private var selectedContainerIds = Set<String>()
     @Environment(\.scenePhase) private var scenePhase
-    
+
     var body: some View {
         VStack {
             NavigationSplitView {
@@ -299,17 +316,29 @@ struct ContentView: View {
                         }
                         .contextMenu {
                             if !selectedContainerIds.isEmpty {
-                                Button(selectedContainerIds.count > 1 ? "Start (\(selectedContainerIds.count))" : "Start") {
+                                Button(
+                                    selectedContainerIds.count > 1
+                                        ? "Start (\(selectedContainerIds.count))" : "Start"
+                                ) {
                                     viewModel.startSelectedContainers(selectedContainerIds)
                                 }
-                                Button(selectedContainerIds.count > 1 ? "Stop (\(selectedContainerIds.count))" : "Stop") {
+                                Button(
+                                    selectedContainerIds.count > 1
+                                        ? "Stop (\(selectedContainerIds.count))" : "Stop"
+                                ) {
                                     viewModel.stopSelectedContainers(selectedContainerIds)
                                 }
-                                Button(selectedContainerIds.count > 1 ? "Kill (\(selectedContainerIds.count))" : "Kill") {
+                                Button(
+                                    selectedContainerIds.count > 1
+                                        ? "Kill (\(selectedContainerIds.count))" : "Kill"
+                                ) {
                                     viewModel.killSelectedContainers(selectedContainerIds)
                                 }
                                 Divider()
-                                Button(selectedContainerIds.count > 1 ? "Delete (\(selectedContainerIds.count))" : "Delete") {
+                                Button(
+                                    selectedContainerIds.count > 1
+                                        ? "Delete (\(selectedContainerIds.count))" : "Delete"
+                                ) {
                                     viewModel.deleteSelectedContainers(selectedContainerIds)
                                 }
                             }
@@ -318,7 +347,7 @@ struct ContentView: View {
                         Table(viewModel.images, selection: $selectedImageIds) {
                             TableColumn("Name", value: \.name)
                             TableColumn("Tag", value: \.tag)
-                            TableColumn("Digest", value:\.digest)
+                            TableColumn("Digest", value: \.digest)
                         }
                         .onDeleteCommand {
                             if !selectedImageIds.isEmpty {
@@ -326,8 +355,11 @@ struct ContentView: View {
                             }
                         }
                         .contextMenu {
-                            if (selectedImageIds.isEmpty == false) {
-                                Button(selectedImageIds.count > 1 ? "Delete (\(selectedImageIds.count))" : "Delete") {
+                            if selectedImageIds.isEmpty == false {
+                                Button(
+                                    selectedImageIds.count > 1
+                                        ? "Delete (\(selectedImageIds.count))" : "Delete"
+                                ) {
                                     viewModel.deleteSelectedImages(selectedImageIds)
                                 }
                             }
@@ -341,7 +373,8 @@ struct ContentView: View {
                 HStack {
                     if viewModel.hasNewerVersion {
                         Button(action: {
-                            if let url = URL(string: "https://github.com/apple/container/releases") {
+                            if let url = URL(string: "https://github.com/apple/container/releases")
+                            {
                                 NSWorkspace.shared.open(url)
                             }
                         }) {
@@ -350,9 +383,10 @@ struct ContentView: View {
                                 .underline()
                         }
                         .buttonStyle(PlainButtonStyle())
-                        .help(viewModel.latestVersion != nil ? 
-                              "Update available: \(viewModel.latestVersion!) - Click to view releases" : 
-                              "Update available - Click to view releases")
+                        .help(
+                            viewModel.latestVersion != nil
+                                ? "Update available: \(viewModel.latestVersion!) - Click to view releases"
+                                : "Update available - Click to view releases")
                     } else {
                         Text(viewModel.cliVersion ?? "Unknown version")
                             .foregroundColor(.secondary)
@@ -374,22 +408,23 @@ struct ContentView: View {
                     }
                 }
             }
-            
-            
+
         }
         .onChange(of: scenePhase) { _, newPhase in
             viewModel.setWindowActive(newPhase == .active)
         }
-        .onReceive(NotificationCenter.default.publisher(for: NSApplication.willTerminateNotification)) { _ in
+        .onReceive(
+            NotificationCenter.default.publisher(for: NSApplication.willTerminateNotification)
+        ) { _ in
             viewModel.shutdown()
         }
         .alert(viewModel.alertTitle, isPresented: $viewModel.shouldPresentAlert) {
-                    Button("OK") {
-                        
-                    }
-                } message: {
-                    Text(viewModel.alertMessage)
-                }
+            Button("OK") {
+
+            }
+        } message: {
+            Text(viewModel.alertMessage)
+        }
     }
 }
 

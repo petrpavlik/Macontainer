@@ -16,7 +16,7 @@ extension UserDefaults {
             set(newValue, forKey: "launchContainersOnAppLaunch")
         }
     }
-    
+
     var quitContainersOnAppQuit: Bool {
         get {
             return bool(forKey: "quitContainersOnAppQuit")

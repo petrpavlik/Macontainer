@@ -12,7 +12,7 @@ struct GitHubRelease: Codable {
     let tagName: String
     let name: String
     let publishedAt: String
-    
+
     enum CodingKeys: String, CodingKey {
         case tagName = "tag_name"
         case name
