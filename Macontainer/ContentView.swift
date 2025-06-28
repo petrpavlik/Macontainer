@@ -339,8 +339,25 @@ struct ContentView: View {
             }
             .toolbar {
                 HStack {
-                    Text(viewModel.cliVersion ?? "Unknown version")
-                        .foregroundColor(viewModel.hasNewerVersion ? .orange : .secondary)
+                    if viewModel.hasNewerVersion {
+                        Button(action: {
+                            if let url = URL(string: "https://github.com/apple/container/releases") {
+                                NSWorkspace.shared.open(url)
+                            }
+                        }) {
+                            Text(viewModel.cliVersion ?? "Unknown version")
+                                .foregroundColor(.orange)
+                                .underline()
+                        }
+                        .buttonStyle(PlainButtonStyle())
+                        .help(viewModel.latestVersion != nil ? 
+                              "Update available: \(viewModel.latestVersion!) - Click to view releases" : 
+                              "Update available - Click to view releases")
+                    } else {
+                        Text(viewModel.cliVersion ?? "Unknown version")
+                            .foregroundColor(.secondary)
+                            .help("Version is up to date")
+                    }
                     Button(action: {
                         if viewModel.isSystemRunning {
                             viewModel.stopSystem()
