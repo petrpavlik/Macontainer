@@ -287,13 +287,14 @@ struct ContentView: View {
     }
 
     @State private var viewModel = ViewModel()
+    @State private var versionViewModel = MacontainerVersionViewModel()
     @State private var listItemSelection: ListItemSelection = .containers
     @State private var selectedImageIds = Set<String>()
     @State private var selectedContainerIds = Set<String>()
     @Environment(\.scenePhase) private var scenePhase
 
     var body: some View {
-        VStack {
+        VStack(spacing: 0) {
             NavigationSplitView {
                 List(selection: $listItemSelection) {
                     NavigationLink(value: ListItemSelection.containers) {
@@ -429,10 +430,20 @@ struct ContentView: View {
                     }
                 }
             }
-
+            
+            // Update stripe at the bottom
+            if versionViewModel.isNewVersionAvailable {
+                UpdateStripeView(
+                    currentVersion: versionViewModel.currentVersion,
+                    latestVersion: versionViewModel.latestVersion ?? ""
+                ) {
+                    versionViewModel.openReleasesPage()
+                }
+            }
         }
         .onChange(of: scenePhase) { _, newPhase in
             viewModel.setWindowActive(newPhase == .active)
+            versionViewModel.setWindowActive(newPhase == .active)
         }
         .onReceive(
             NotificationCenter.default.publisher(for: NSApplication.willTerminateNotification)
