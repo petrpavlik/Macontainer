@@ -415,7 +415,7 @@ struct ContentView: View {
             // Update stripe at the bottom
             if versionViewModel.isNewVersionAvailable {
                 UpdateStripeView(
-                    currentVersion: versionViewModel.currentVersion ?? "",
+                    currentVersion: versionViewModel.currentVersion,
                     latestVersion: versionViewModel.latestVersion ?? ""
                 ) {
                     versionViewModel.openReleasesPage()

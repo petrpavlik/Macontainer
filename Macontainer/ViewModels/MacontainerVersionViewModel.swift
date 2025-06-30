@@ -14,15 +14,15 @@ private let logger = Logger(
 @Observable @MainActor final class MacontainerVersionViewModel {
     
     private(set) var isNewVersionAvailable = false
-    private(set) var currentVersion: String?
+    private(set) let currentVersion: String
     private(set) var latestVersion: String?
     
-    private var lastUpdateCheck: Date?
+    @ObservationIgnored private var lastUpdateCheck: Date?
     private let minimumCheckInterval: TimeInterval = 3600 // 1 hour
     
     init() {
         // Initialize current version from the Macontainer app
-        getCurrentVersion()
+        self.currentVersion = getCurrentVersion()
     }
     
     func setWindowActive(_ active: Bool) {
@@ -31,9 +31,14 @@ private let logger = Logger(
         }
     }
     
-    private func getCurrentVersion() {
+    private func getCurrentVersion() -> String {
         // Get the current version of Macontainer app
-        currentVersion = Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String
+        if let version = Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String {
+            return version
+        } else {
+            logger.error("Failed to get current version from bundle, using fallback '0.0.0'")
+            return "0.0.0"
+        }
     }
     
     private func checkForUpdatesIfNeeded() {
@@ -49,7 +54,7 @@ private let logger = Logger(
     }
     
     private func checkForUpdates() {
-        guard let currentVersionString = currentVersion else { return }
+        let currentVersionString = currentVersion
         
         lastUpdateCheck = Date()
         
