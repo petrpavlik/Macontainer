@@ -430,7 +430,7 @@ struct ContentView: View {
                     }
                 }
             }
-            
+
             // Update stripe at the bottom
             if versionViewModel.isNewVersionAvailable {
                 UpdateStripeView(
