@@ -23,8 +23,6 @@ import SwiftUI
     var shouldPresentAlert = false
     @ObservationIgnored private(set) var alertMessage = ""
     @ObservationIgnored private(set) var alertTitle = ""
-    
-    var shouldPresentUpdatePrompt = false
 
     init() {
         // Find the actual path of the container command
@@ -263,22 +261,6 @@ import SwiftUI
                     currentVersion: currentVersion)
                 self.latestVersion = result.latestVersion
                 self.hasNewerVersion = result.hasNewerVersion
-                
-                // Show update prompt if there's a newer version and we haven't already
-                // prompted the user about this specific version
-                if result.hasNewerVersion {
-                    let latestVersion = result.latestVersion
-                    let skippedVersion = UserDefaults.standard.lastSkippedUpdateVersion
-                    let remindedVersion = UserDefaults.standard.lastRemindedUpdateVersion
-                    
-                    // Don't show prompt if user has skipped this version
-                    if skippedVersion != latestVersion {
-                        // Show prompt if we haven't reminded about this version yet
-                        if remindedVersion != latestVersion {
-                            self.shouldPresentUpdatePrompt = true
-                        }
-                    }
-                }
             } catch {
                 print("Failed to check for updates: \(error)")
             }
@@ -294,29 +276,6 @@ import SwiftUI
             }
         }
     }
-    
-    func handleUpdatePromptViewUpdate() {
-        if let url = URL(string: "https://github.com/apple/container/releases") {
-            NSWorkspace.shared.open(url)
-        }
-        shouldPresentUpdatePrompt = false
-    }
-    
-    func handleUpdatePromptRemindLater() {
-        // Remember that we've reminded about this version
-        if let latestVersion = latestVersion {
-            UserDefaults.standard.lastRemindedUpdateVersion = latestVersion
-        }
-        shouldPresentUpdatePrompt = false
-    }
-    
-    func handleUpdatePromptSkipVersion() {
-        // Remember that user wants to skip this version
-        if let latestVersion = latestVersion {
-            UserDefaults.standard.lastSkippedUpdateVersion = latestVersion
-        }
-        shouldPresentUpdatePrompt = false
-    }
 }
 
 struct ContentView: View {
@@ -328,13 +287,14 @@ struct ContentView: View {
     }
 
     @State private var viewModel = ViewModel()
+    @State private var versionViewModel = MacontainerVersionViewModel()
     @State private var listItemSelection: ListItemSelection = .containers
     @State private var selectedImageIds = Set<String>()
     @State private var selectedContainerIds = Set<String>()
     @Environment(\.scenePhase) private var scenePhase
 
     var body: some View {
-        VStack {
+        VStack(spacing: 0) {
             NavigationSplitView {
                 List(selection: $listItemSelection) {
                     NavigationLink(value: ListItemSelection.containers) {
@@ -433,27 +393,8 @@ struct ContentView: View {
             }
             .toolbar {
                 HStack {
-                    if viewModel.hasNewerVersion {
-                        Button(action: {
-                            if let url = URL(string: "https://github.com/apple/container/releases")
-                            {
-                                NSWorkspace.shared.open(url)
-                            }
-                        }) {
-                            Text(viewModel.cliVersion ?? "Unknown version")
-                                .foregroundColor(.orange)
-                                .underline()
-                        }
-                        .buttonStyle(PlainButtonStyle())
-                        .help(
-                            viewModel.latestVersion != nil
-                                ? "Update available: \(viewModel.latestVersion!) - Click to view releases"
-                                : "Update available - Click to view releases")
-                    } else {
-                        Text(viewModel.cliVersion ?? "Unknown version")
-                            .foregroundColor(.secondary)
-                            .help("Version is up to date")
-                    }
+                    Text(viewModel.cliVersion ?? "Unknown version")
+                        .foregroundColor(.secondary)
                     Button(action: {
                         if viewModel.isSystemRunning {
                             viewModel.stopSystem()
@@ -470,10 +411,20 @@ struct ContentView: View {
                     }
                 }
             }
-
+            
+            // Update stripe at the bottom
+            if versionViewModel.isNewVersionAvailable {
+                UpdateStripeView(
+                    currentVersion: versionViewModel.currentVersion,
+                    latestVersion: versionViewModel.latestVersion
+                ) {
+                    versionViewModel.openReleasesPage()
+                }
+            }
         }
         .onChange(of: scenePhase) { _, newPhase in
             viewModel.setWindowActive(newPhase == .active)
+            versionViewModel.setWindowActive(newPhase == .active)
         }
         .onReceive(
             NotificationCenter.default.publisher(for: NSApplication.willTerminateNotification)
@@ -486,21 +437,6 @@ struct ContentView: View {
             }
         } message: {
             Text(viewModel.alertMessage)
-        }
-        .alert("Update Available", isPresented: $viewModel.shouldPresentUpdatePrompt) {
-            Button("View Update") {
-                viewModel.handleUpdatePromptViewUpdate()
-            }
-            Button("Remind Me Later") {
-                viewModel.handleUpdatePromptRemindLater()
-            }
-            Button("Skip This Version") {
-                viewModel.handleUpdatePromptSkipVersion()
-            }
-        } message: {
-            Text(viewModel.latestVersion != nil 
-                 ? "A new version (\(viewModel.latestVersion!)) of the Container CLI is available."
-                 : "A new version of the Container CLI is available.")
         }
     }
 }
