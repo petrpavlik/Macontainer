@@ -25,4 +25,22 @@ extension UserDefaults {
             set(newValue, forKey: "quitContainersOnAppQuit")
         }
     }
+    
+    var lastSkippedUpdateVersion: String? {
+        get {
+            return string(forKey: "lastSkippedUpdateVersion")
+        }
+        set {
+            set(newValue, forKey: "lastSkippedUpdateVersion")
+        }
+    }
+    
+    var lastRemindedUpdateVersion: String? {
+        get {
+            return string(forKey: "lastRemindedUpdateVersion")
+        }
+        set {
+            set(newValue, forKey: "lastRemindedUpdateVersion")
+        }
+    }
 }

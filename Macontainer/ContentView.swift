@@ -23,6 +23,8 @@ import SwiftUI
     var shouldPresentAlert = false
     @ObservationIgnored private(set) var alertMessage = ""
     @ObservationIgnored private(set) var alertTitle = ""
+    
+    var shouldPresentUpdatePrompt = false
 
     init() {
         // Find the actual path of the container command
@@ -261,6 +263,22 @@ import SwiftUI
                     currentVersion: currentVersion)
                 self.latestVersion = result.latestVersion
                 self.hasNewerVersion = result.hasNewerVersion
+                
+                // Show update prompt if there's a newer version and we haven't already
+                // prompted the user about this specific version
+                if result.hasNewerVersion {
+                    let latestVersion = result.latestVersion
+                    let skippedVersion = UserDefaults.standard.lastSkippedUpdateVersion
+                    let remindedVersion = UserDefaults.standard.lastRemindedUpdateVersion
+                    
+                    // Don't show prompt if user has skipped this version
+                    if skippedVersion != latestVersion {
+                        // Show prompt if we haven't reminded about this version yet
+                        if remindedVersion != latestVersion {
+                            self.shouldPresentUpdatePrompt = true
+                        }
+                    }
+                }
             } catch {
                 print("Failed to check for updates: \(error)")
             }
@@ -275,6 +293,29 @@ import SwiftUI
                 stopSystem()
             }
         }
+    }
+    
+    func handleUpdatePromptViewUpdate() {
+        if let url = URL(string: "https://github.com/apple/container/releases") {
+            NSWorkspace.shared.open(url)
+        }
+        shouldPresentUpdatePrompt = false
+    }
+    
+    func handleUpdatePromptRemindLater() {
+        // Remember that we've reminded about this version
+        if let latestVersion = latestVersion {
+            UserDefaults.standard.lastRemindedUpdateVersion = latestVersion
+        }
+        shouldPresentUpdatePrompt = false
+    }
+    
+    func handleUpdatePromptSkipVersion() {
+        // Remember that user wants to skip this version
+        if let latestVersion = latestVersion {
+            UserDefaults.standard.lastSkippedUpdateVersion = latestVersion
+        }
+        shouldPresentUpdatePrompt = false
     }
 }
 
@@ -445,6 +486,21 @@ struct ContentView: View {
             }
         } message: {
             Text(viewModel.alertMessage)
+        }
+        .alert("Update Available", isPresented: $viewModel.shouldPresentUpdatePrompt) {
+            Button("View Update") {
+                viewModel.handleUpdatePromptViewUpdate()
+            }
+            Button("Remind Me Later") {
+                viewModel.handleUpdatePromptRemindLater()
+            }
+            Button("Skip This Version") {
+                viewModel.handleUpdatePromptSkipVersion()
+            }
+        } message: {
+            Text(viewModel.latestVersion != nil 
+                 ? "A new version (\(viewModel.latestVersion!)) of the Container CLI is available."
+                 : "A new version of the Container CLI is available.")
         }
     }
 }
