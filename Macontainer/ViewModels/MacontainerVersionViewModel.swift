@@ -6,6 +6,10 @@
 //
 
 import Foundation
+import os.log
+
+private let logger = Logger(
+    subsystem: Bundle.main.bundleIdentifier ?? "com.macontainer", category: "MacontainerVersionViewModel")
 
 @Observable @MainActor final class MacontainerVersionViewModel {
     
@@ -56,21 +60,21 @@ import Foundation
                 let latestVersionString = try await fetchLatestVersion()
                 self.latestVersion = latestVersionString
                 
-                // Parse versions and compare
+                // Parse versions and compare using SemverComparator
                 let currentParsed = parseVersion(from: currentVersionString)
-                let latestParsed = parseVersion(from: latestVersionString)
+                let latestParsed = latestVersionString
                 
-                self.isNewVersionAvailable = compareVersions(current: currentParsed, latest: latestParsed)
+                self.isNewVersionAvailable = SemverComparator.isGreaterThan(latestParsed, currentParsed)
                 
                 if isNewVersionAvailable {
-                    print("🔄 Update available!")
-                    print("   Current version: \(currentParsed)")
-                    print("   Latest version: \(latestParsed)")
+                    logger.info("🔄 Update available!")
+                    logger.info("   Current version: \(currentParsed)")
+                    logger.info("   Latest version: \(latestParsed)")
                 } else {
-                    print("✅ Macontainer is up to date (\(currentParsed))")
+                    logger.info("✅ Macontainer is up to date (\(currentParsed))")
                 }
             } catch {
-                print("Failed to check for updates: \(error)")
+                logger.error("Failed to check for updates: \(error.localizedDescription)")
             }
         }
     }
@@ -111,29 +115,6 @@ import Foundation
         
         // Fallback: return the original string
         return versionString
-    }
-    
-    private func compareVersions(current: String, latest: String) -> Bool {
-        // Split versions into components
-        let currentComponents = current.split(separator: ".").compactMap { Int($0) }
-        let latestComponents = latest.split(separator: ".").compactMap { Int($0) }
-        
-        // Ensure we have at least 3 components for both versions
-        guard currentComponents.count >= 3, latestComponents.count >= 3 else {
-            // Fallback to string comparison if parsing fails
-            return current != latest
-        }
-        
-        // Compare major, minor, patch versions
-        for i in 0..<3 {
-            if latestComponents[i] > currentComponents[i] {
-                return true
-            } else if latestComponents[i] < currentComponents[i] {
-                return false
-            }
-        }
-        
-        return false // Versions are equal
     }
     
     func openReleasesPage() {

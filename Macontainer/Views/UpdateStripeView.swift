@@ -9,8 +9,8 @@
 import SwiftUI
 
 struct UpdateStripeView: View {
-    let currentVersion: String?
-    let latestVersion: String?
+    let currentVersion: String
+    let latestVersion: String
     let onUpdateAction: () -> Void
     
     var body: some View {
@@ -21,11 +21,9 @@ struct UpdateStripeView: View {
             Text("A new version of Macontainer is available")
                 .font(.subheadline)
             
-            if let latest = latestVersion {
-                Text("(\(latest))")
-                    .font(.subheadline)
-                    .foregroundColor(.secondary)
-            }
+            Text("(\(latestVersion))")
+                .font(.subheadline)
+                .foregroundColor(.secondary)
             
             Spacer()
             
